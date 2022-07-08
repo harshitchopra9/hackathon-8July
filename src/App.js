@@ -3,6 +3,7 @@ import "./App.css";
 import Modal from "@mui/material/Modal";
 import Box from "@mui/material/Box";
 import { mockData, cartData } from "./mockData";
+import emailjs from "@emailjs/browser"
 
 function App() {
   const [openModal, setOpenModal] = React.useState(false);
@@ -133,6 +134,8 @@ function App() {
       eachPersonHasToPayHowMuchDifferentAmount.push({
         name: value.name,
         total: total,
+        email: value.email,
+        preferredPayment: value.preferredPayment
       });
     });
   }
@@ -157,6 +160,51 @@ function App() {
     }
     setFriendPhone(mobile);
   }
+
+  function sendEmail(name, email, price, preferredPaymentMode) {
+    if (!price) {
+      return
+    }
+    emailjs.send(
+      "service_aro12vh",
+      "template_o7hpbdd",
+      {
+        from_name: 'Team Splitter',
+        to_email: email,
+        to_name: name,
+        message: `Hey, ${name}. You owe ${roundOffToTwoDigits(price)} INR for the swiggy order number 874169. You can pay them through ${preferredPaymentMode}.`,
+        reply_to: 'chopraharshit9999@gmail.con',
+      },
+      "0Z51IHiRj7oUS8igM"
+    )
+      .then((response) => {
+        console.log('Hurray, Message Sent!');
+      })
+      .catch((err) => {
+        console.log('FAILED...', err);
+      })
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+
+    if (eachPersonHasToPay) {
+      selectedFriendsList
+        .filter((val) => val.name !== "Me")
+        .map((value) => (
+          sendEmail(value.name, value.email, eachPersonHasToPay, value.preferredPayment)
+        ))
+      return;
+    }
+
+    if (eachPersonHasToPayHowMuchDifferentAmount.length > 0) {
+      eachPersonHasToPayHowMuchDifferentAmount
+        .filter((val) => val.name !== "Me")
+        .map((value) => (
+          sendEmail(value.name, value.email, value.total !== 0 && value.total + divideDeliveryDiscountAndChargesEqually(), value.preferredPayment)
+        ))
+    }
+  };
 
   return (
     <div className="App">
@@ -455,7 +503,7 @@ function App() {
           <p className="fixed_footer_left_text">VIEW DETAILED BILL</p>
         </p>
         <p className="fixed_footer_right">
-          <p>MAKE PAYMENT</p>
+          <p onClick={(e) => onSubmit(e)}>MAKE PAYMENT</p>
         </p>
       </div>
     </div>
